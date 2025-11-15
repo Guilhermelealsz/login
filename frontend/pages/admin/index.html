@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="../registro/index.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .users-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .role-admin {
+            background: #dc3545;
+            color: white;
+        }
+        .role-user {
+            background: #28a745;
+            color: white;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <h1>Painel Administrativo</h1>
+
+        <button class="logout-btn" onclick="logout()">Sair</button>
+
+        <div id="message" class="message" style="display: none;"></div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total de Usuários</h3>
+                <div class="stat-number" id="totalUsers">-</div>
+            </div>
+        </div>
+
+        <div class="users-table">
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="4">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+
+        // Quando a página carrega completamente
+        window.addEventListener('DOMContentLoaded', () => {
+            // Verifica se o usuário tem um token salvo (está logado)
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '../login/index.html';
+                return;
+            }
+            // Se tem token, carrega os dados do admin
+            loadAdminData();
+        });
+
+        // Função para carregar os dados dos usuários
+        async function loadAdminData() {
+            // Pega o token novamente
+            const token = localStorage.getItem('token');
+            // Pega o elemento onde mostra mensagens de erro
+            const messageDiv = document.getElementById('message');
+
+            try {
+                // Faz uma requisição para o servidor pedindo a lista de usuários
+                const response = await fetch(`${API_BASE}/admin/usuarios`, {
+                    headers: {
+                        // Envia o token no cabeçalho para provar que está autorizado
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                // Converte a resposta para JSON
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Se deu certo, mostra o total de usuários
+                    document.getElementById('totalUsers').textContent = data.total;
+                    // E mostra a tabela com todos os usuários
+                    renderUsersTable(data.usuarios);
+                } else {
+                    // Se deu erro
+                    if (response.status === 401 || response.status === 403) {
+                        // Token inválido ou sem permissão, volta pro login
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('usuario');
+                        window.location.href = '../login/index.html';
+                    } else {
+                        // Outro tipo de erro, mostra mensagem
+                        messageDiv.textContent = data.erro || 'Erro ao carregar dados';
+                        messageDiv.className = 'message error';
+                        messageDiv.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                // Se houve erro de conexão
+                messageDiv.textContent = 'Erro de conexão';
+                messageDiv.className = 'message error';
+                messageDiv.style.display = 'block';
+            }
+        }
+
+        // Função para mostrar a tabela de usuários
+        function renderUsersTable(usuarios) {
+            // Pega o corpo da tabela
+            const tbody = document.getElementById('usersTableBody');
+            // Limpa qualquer conteúdo anterior
+            tbody.innerHTML = '';
+
+            // Para cada usuário na lista
+            usuarios.forEach(usuario => {
+                // Cria uma nova linha na tabela
+                const row = document.createElement('tr');
+                // Preenche a linha com os dados do usuário
+                row.innerHTML = `
+                    <td>${usuario.id}</td>
+                    <td>${usuario.nome}</td>
+                    <td>${usuario.username || '-'}</td>
+                    <td>${usuario.email}</td>
+                `;
+                // Adiciona a linha na tabela
+                tbody.appendChild(row);
+            });
+        }
+
+        // Função para fazer logout
+        function logout() {
+            // Remove o token e dados do usuário do navegador
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            // Volta para a tela de login
+            window.location.href = '../login/index.html';
+        }
+    </script>
+</body>
+</html>

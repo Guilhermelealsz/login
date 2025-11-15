@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>Registro</title>
+</head>
+
+<body>
+    <div class="cabecalho">
+        <h1>Registro Administrativo</h1>
+    </div>
+
+    <div class="registro-container">
+        <form id="registroForm">
+            <div id="message" class="message"></div>
+            <input type="text" id="nome" placeholder="Nome" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="senha" placeholder="Senha" required>
+            <input type="tel" id="celular" placeholder="Celular">
+            <input type="date" id="data_nascimento" placeholder="Data de Nascimento">
+            <input type="text" id="username" placeholder="Username">
+            <label for="role">Tipo de Conta:</label>
+            <select id="role" name="role" required>
+                <option value="user">Usuário</option>
+                <option value="admin">Administrador</option>
+            </select>
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+
+    <div class="button-voltar">
+        <a href="../login/index.html">Voltar</a>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000'; 
+
+        document.getElementById('registroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const celular = document.getElementById('celular').value;
+            const data_nascimento = document.getElementById('data_nascimento').value;
+            const username = document.getElementById('username').value;
+            const role = document.getElementById('role').value;
+            const messageDiv = document.getElementById('message');
+
+            try {
+                const response = await fetch(`${API_BASE}/usuarios`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nome,
+                        email,
+                        senha,
+                        celular,
+                        data_nascimento,
+                        username,
+                        role
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Usuário cadastrado com sucesso!';
+                    messageDiv.className = 'message success';
+                    setTimeout(() => {
+                        window.location.href = '../login/index.html';
+                    }, 2000);
+                } else {
+                    messageDiv.textContent = data.erro || 'Erro ao cadastrar usuário';
+                    messageDiv.className = 'message error';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Erro de conexão';
+                messageDiv.className = 'message error';
+            }
+        });
+    </script>
+</body>
+
+</html>

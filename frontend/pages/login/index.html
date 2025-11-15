@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Administrativo</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  
+  <div class="login-page">
+    <div class="login-box">
+      
+      <div class="login-image">
+        <img src="../../images/logo.png" alt="logo">
+      </div>
+
+      <form class="login-form" id="loginForm">
+        <h1 class="form-title">Login Administrativo</h1>
+
+        <div id="message" class="message"></div>
+
+        <div class="form-group">
+          <input type="email" name="email" id="email" placeholder="E-mail" required>
+        </div>
+
+        <div class="form-group">
+          <input type="password" name="password" id="password" placeholder="Senha" required>
+        </div>
+
+        <button type="submit" class="btn-login">Entrar</button>
+
+        <div class="form-links">
+          <a href="#" class="forgot-link">Esqueceu sua senha?</a>
+          <a href="../registro/registro.html" class="register-link">Criar conta</a>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const messageDiv = document.getElementById('message');
+
+      try {
+        const response = await fetch(`${API_BASE}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, senha: password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('usuario', JSON.stringify(data.usuario));
+
+          if (data.usuario.username === 'adminR') {
+            window.location.href = '../admin/index.html';
+          } else {
+            messageDiv.textContent = 'Login realizado com sucesso! Você não tem acesso ao painel administrativo.';
+            messageDiv.className = 'message success';
+          }
+        } else {
+          messageDiv.textContent = data.erro || 'Erro ao fazer login';
+          messageDiv.className = 'message error';
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Erro de conexão';
+        messageDiv.className = 'message error';
+      }
+    });
+  </script>
+</body>
+</html>
